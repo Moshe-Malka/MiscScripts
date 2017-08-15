@@ -7,6 +7,7 @@ def initWebdriver():
     try:
         w_driver = webdriver.PhantomJS()
         w_driver.set_window_size(1920, 1080)
+        print "[#] WebDriver Initialized."
         return w_driver
     except WebDriverException as err:
         print "[!] Web Driver Exception. [initWebdriver]"
@@ -22,6 +23,7 @@ def login(w_driver,emailAddress,password):
         sleep(1.5)
         w_driver.find_element_by_id("login-submit").click()
         w_driver.save_screenshot("linkedin_after_login.png")
+        print "[#] Login Successfull."
     except NoSuchElementException as err:
         print "[!] No Such Element. [login]"
         exit(1)
@@ -31,10 +33,13 @@ def check_exists_by_css_selector(w_driver,css):
         w_driver.find_element_by_css_selector(css)
     except NoSuchElementException:
         return False
+        print "[#] Could Not Find Results."
+    print "[#] Found Results."
     return True
 
 def trySearch(w_driver,baseUrl,searchUrl,keyword):
     try:
+        print "[#] Searching -  "+keyword+" ....."
         w_driver.get(baseUrl+searchUrl+keyword)
         sleep(3)
         w_driver.save_screenshot('linkedin_searchResults.png')
@@ -52,14 +57,17 @@ def getListing(w_driver):
         exit(1)
 
 def printResults(results):
+    i=1
     for result in results:
         try:
+            print "["+str(i)+"]"
             print result.find_element_by_css_selector("a h3").text
             print result.find_element_by_css_selector("a").get_attribute("href")
             print result.find_element_by_css_selector(".subline-level-1").text
             print result.find_element_by_css_selector(".subline-level-2").text
         except NoSuchElementException as err:
             pass
+        i+=1
         print "#"*50
 
 if __name__ == "__main__":
@@ -69,12 +77,11 @@ if __name__ == "__main__":
     #################################
     m_driver = initWebdriver()
     m_driver.get(baseUrl)
-    e = raw_input("[>] please enter your email : ")
-    p = raw_input("[>] please enter your password : ")
-    login(m_driver,e,p)
+    login(m_driver,"***********","**********")
     m_driver.save_screenshot('linkedin_loggedIn.png')
     sleep(1.5)
-    keyword = raw_input("[>] please enter company name : ")
+    keyword="microsoft"
+    # keyword = raw_input("[>] please enter company name : ")
     flag = trySearch(m_driver,baseUrl,searchUrl,keyword)
     if(not flag):
         results = getListing(m_driver)
