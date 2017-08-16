@@ -3,11 +3,12 @@ from selenium import common
 from selenium.common.exceptions import *
 from time import sleep
 from sys import exit
+import json
 def initWebdriver():
     try:
         w_driver = webdriver.PhantomJS()
         w_driver.set_window_size(1920, 1080)
-        print "[#] WebDriver Initialized."
+        print "[#] new WebDriver Initialized."
         return w_driver
     except WebDriverException as err:
         print "[!] Web Driver Exception. [initWebdriver]"
@@ -60,7 +61,7 @@ def printResults(results):
     i=1
     for result in results:
         try:
-            print "["+str(i)+"]"
+            print "------------------["+str(i)+"]------------------"
             print result.find_element_by_css_selector("a h3").text
             print result.find_element_by_css_selector("a").get_attribute("href")
             print result.find_element_by_css_selector(".subline-level-1").text
@@ -69,69 +70,71 @@ def printResults(results):
             pass
         i+=1
         print "#"*50
+def scrapeEmployeesPageRec(driver):
+    global output_array
+    workers_wrapper = driver.find_elements_by_css_selector(".search-result.search-result__occluded-item.ember-view")    
+    for worker in workers_wrapper:
+        tmp_arr[0] = worker.find_element_by_css_selector(".name.actor-name").text  #full name
+        tmp_arr[1] = worker.find_element_by_css_selector(".subline-level-1.search-result__truncate").text  #position
+        tmp_arr[2] = worker.find_element_by_css_selector(".subline-level-2.search-result__truncate").text  #location
+        tmp_arr[3] = worker.find_element_by_css_selector(".search-result__image-wrapper .search-result__result-link").get_attribute("href")  #link to profile
+        if(check_exists_by_css_selector(".search-result__image .lazy-image.ghost-person")):
+            tmp_arr[4] = "no thumbnail available"
+        else:
+            tmp_arr[4] = driver.find_element_by_css_selector(".search-result__image .lazy-image.loaded").get_attribute("src")
+        output_array.append(temp_arr)
+    sleep(1.5)
+    if(check_exists_by_css_selector(driver,"button.next")):
+        driver.find_element_by_css_selector("button.next").click()
+        scrapeEmployeesPage(driver)
+    else:
+        return output_array
 
 if __name__ == "__main__":
     ########### constents ########### 
     baseUrl = "https://www.linkedin.com"
     searchUrl = "/search/results/companies/?keywords="
-    #################################
+    outputFilename = "LinkesinScraper_results_"
+    output_array=[]
+
     m_driver = initWebdriver()
     m_driver.get(baseUrl)
-    login(m_driver,"***********","**********")
+    login(m_driver,"moshemalka2014@gmail.com","kiko7287")
     m_driver.save_screenshot('linkedin_loggedIn.png')
     sleep(1.5)
-    keyword="microsoft"
-    # keyword = raw_input("[>] please enter company name : ")
+    keyword = raw_input("[>] please enter company name : ")
     flag = trySearch(m_driver,baseUrl,searchUrl,keyword)
+    results=[]
     if(not flag):
         results = getListing(m_driver)
         printResults(results)
     else:
         print "[!] Company name was not found in Linkedin."
         print "[!] see screenshot named 'linkedin_searchResults.png' for queries."
+    while(True):
+        try:
+            choice = raw_input("[>] please choose a company listed above : ")
+            int(choice)
+            if(int(choice)<1<len(results)): 
+                raise Exception
+            break
+        except Exception as err:
+            print "[!] must be a number !. try again..."
+    choice=int(choice)-1
+    nextLink = results[choice].find_element_by_css_selector("a").get_attribute("href")
+    
     m_driver.quit()
+    m2_driver = initWebdriver()
+    m2_driver.get(nextLink)
+    m2_driver.save_screenshot('linkedin_companyPage.png')
+    m2_driver.find_element_by_css_selector(".snackbar-description-see-all-link").click()
+    sleep(2)
+    amount_of_workers = str(m2_driver.find_elements_by_css_selector("h3.search-results__total").text).split("Showing ")[1].strip()
+    m2_driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+    print "[#] Starting to scrape " + amount_of_workers + " workers........"
+    scrapeEmployeesPageRec(m2_driver)
+        
+    
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# ################################ Options : ################################
-# #1
-# jobs_btn = w_driver.find_element_by_id("jobs-tab-icon").click()
-
-# #2
-# my_network_btn = w_driver.find_element_by_id("mynetwork-tab-icon").click()
-# # scroll down to infinity
-# SCROLL_PAUSE_TIME = 0.5
-# # Get scroll height
-# last_height = driver.execute_script("return document.body.scrollHeight")
-# while True:
-#     # Scroll down to bottom
-#     driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-#     # Wait to load page
-#     time.sleep(SCROLL_PAUSE_TIME)
-#     # Calculate new scroll height and compare with last scroll height
-#     new_height = driver.execute_script("return document.body.scrollHeight")
-#     if new_height == last_height:
-#         break
-#     last_height = new_height
-# connect_links = w_driver.find_elements_by_class_name("button-secondary-small")
-# names = w_driver.find_elements_by_class_name("mn-person-info__name").text
-
-# for link, name in connect_links, names:
-#     print "[#] Sent Connection Invite To : " + str(name).strip()
-#     link.click()
+    m2_driver.quit()
