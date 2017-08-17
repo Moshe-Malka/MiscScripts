@@ -99,7 +99,7 @@ if __name__ == "__main__":
 
     m_driver = initWebdriver()
     m_driver.get(baseUrl)
-    login(m_driver,"moshemalka2014@gmail.com","kiko7287")
+    login(m_driver,"**************","************")
     m_driver.save_screenshot('linkedin_loggedIn.png')
     sleep(1.5)
     keyword = raw_input("[>] please enter company name : ")
