@@ -111,7 +111,7 @@ def getCompany(m_driver,baseUrl,searchUrl):
             break
         except Exception as err:
             print "[!] ValueError - must be a number greater or equal to one! try again..."
-    return int(choice)-1
+    return results[int(choice)-1]
 
 def preparePageForExtraction(m_driver):
     m_driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
@@ -166,11 +166,10 @@ if __name__ == "__main__":
     m_driver.save_screenshot('linkedin_loggedIn.png')
     sleep(1.5)
     user_choice = getCompany(m_driver,baseUrl,searchUrl)
-    nextLink = results[choice].find_element_by_css_selector("a").get_attribute("href")
+    nextLink = user_choice.find_element_by_css_selector("a").get_attribute("href")
     m_driver.save_screenshot('linkedin_before_next_hop.png')
     sleep(2)
     m_driver.get(nextLink)
-    sleep(2)
     m_driver.save_screenshot('linkedin_after_next_hop.png')
     clickAllEmployeesButton(m_driver)
     preparePageForExtraction(m_driver)
