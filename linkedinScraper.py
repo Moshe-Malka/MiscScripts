@@ -16,6 +16,15 @@ def initWebdriver():
         print "[!] Web Driver Exception. [initWebdriver]"
         exit(1)
 
+def exitGracefully(driver,custom_message,error_message = None):
+    try:
+        if(error_message!=None): print e_message
+        print custom_message
+        driver.quit()
+        exit(1)
+    except Exception:
+        pass
+
 def check_exists_by_css_selector(w_driver,css):
     try:
         w_driver.find_element_by_css_selector(css)
@@ -40,14 +49,10 @@ def login(w_driver,emailAddress,password):
         else:
             raise Exception
     except NoSuchElementException as err1:
-        print "[!] No Such Element. [login]"
-        w_driver.quit()
-        exit(1)
+        exitGracefully(w_driver,"[!] No Such Element. [login]")
     except Exception as err2:
-        print "[!] Login Failed! [login]"
         w_driver.save_screenshot("linkedin_login_failed.png")
-        w_driver.quit()
-        exit(1)
+        exitGracefully(w_driver,"[!] Login Failed! [login]")
 
 def doSearch(w_driver,baseUrl,searchUrl,keyword):
     try:
@@ -57,62 +62,65 @@ def doSearch(w_driver,baseUrl,searchUrl,keyword):
         w_driver.save_screenshot('linkedin_searchResults.png')
         return check_exists_by_css_selector(w_driver,".search-no-results__message--muted-no-type")
     except WebDriverException as err:
-        print "[!] Web Driver Exception. [trySearch]"
-        w_driver.quit()
-        exit(1)
+        exitGracefully(w_driver,"[!] Web Driver Exception. [trySearch]")
 
 def getListing(w_driver):
     try:
         res = w_driver.find_elements_by_css_selector(".results-list li.search-result")
         return res
     except WebDriverException as err:
-        print "[!] Web Driver Exception. [getListing]"
-        w_driver.quit()
-        exit(1)
+        exitGracefully(w_driver,"[!] Web Driver Exception. [getListing]")
 
 def printResults(results):
     i=1
     for result in results:
         try:
-            print "------------------["+str(i)+"]------------------"
+            print "----------------------["+str(i)+"]----------------------"
             print result.find_element_by_css_selector("a h3").text
-            print result.find_element_by_css_selector("a").get_attribute("href")
+            # print result.find_element_by_css_selector("a").get_attribute("href")
             print result.find_element_by_css_selector(".subline-level-1").text
             print result.find_element_by_css_selector(".subline-level-2").text
         except NoSuchElementException as err:
             pass
         i+=1
-        print "------------------------------------------------"
-# def scrapeEmployeesPageRec(driver):
-#     try:
-#         global output_array
-#         workers_wrapper = driver.find_elements_by_css_selector(".search-result.search-result__occluded-item.ember-view")
-#         for worker in workers_wrapper:
-#             tmp_arr=[]
-#             tmp_arr.append(worker.find_element_by_css_selector("span.name-and-icon > span:not(.premium-icon)").text)  #full name
-#             tmp_arr.append(worker.find_element_by_css_selector("p.subline-level-1.search-result__truncate").text)  #position
-#             tmp_arr.append(worker.find_element_by_css_selector(".subline-level-2.search-result__truncate").text)  #location
-#             tmp_arr.append(worker.find_element_by_css_selector(".search-result__image-wrapper .search-result__result-link").get_attribute("href"))  #link to profile
-#             if(check_exists_by_css_selector(driver,".search-result__image .lazy-image.ghost-person")):
-#                 tmp_arr.append("no thumbnail available")
-#             else:
-#                 tmp_arr.append(driver.find_element_by_css_selector("figure > img").get_attribute("src"))
-#             output_array.append(temp_arr)
-#         sleep(1.5)
-#         if(check_exists_by_css_selector(driver,"button.next")):
-#             driver.find_element_by_css_selector("button.next").click()
-#             sleep(10)
-#             m_driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-#             sleep(10)
-#             scrapeEmployeesPage(driver)
-#         else:
-#             return output_array
-#     except Exception as e:
-#         print "[!] Exception Accourred - [scrapeEmployeesPageRec]"
-#         print e.message
-#         m_driver.quit()
-#         exit(1)
-def scrapeEmployeesPageRec(driver):
+        # print "------------------------------------------------"
+def clickAllEmployeesButton(m_driver):
+    try:
+        css = ".org-company-employees-snackbar__details-highlight.snackbar-description-see-all-link"
+        all_employees_btn = m_driver.find_element_by_css_selector(css).click()
+    except NoSuchElementException as e:
+        exitGracefully(m_driver,"[!] No Such Element - "+css,e.message)
+    except Exception as err:
+        exitGracefully(m_driver,"[!] Exception",err.message)
+    sleep(5)
+
+def getCompany(m_driver,baseUrl,searchUrl):
+    keyword = raw_input("[>] please enter company name : ")
+    no_results_flag = doSearch(m_driver,baseUrl,searchUrl,keyword)
+    results=[]
+    if(not no_results_flag):
+        results = getListing(m_driver)
+        printResults(results)
+    else:
+        exitGracefully(m_driver,"[!] Company name was not found in Linkedin.")
+    while(True):
+        try:
+            choice = raw_input("[>] please choose a company listed above : ")
+            if( int(choice)<1 or int(choice)>len(results) ):
+                raise Exception
+            break
+        except Exception as err:
+            print "[!] ValueError - must be a number greater or equal to one! try again..."
+    return int(choice)-1
+
+def preparePageForExtraction(m_driver):
+    m_driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+    sleep(5)
+    m_driver.save_screenshot('linkedin_workers_listing.png')
+    amount_of_workers = m_driver.find_element_by_css_selector("h3.search-results__total").text.split("Showing ")[1].split(" ")[0].strip()
+    print "[#] Found " + amount_of_workers + " Workers."
+
+def scrapeEmployeesPage(driver):
     global output_array
     page_count=1
     try:
@@ -139,11 +147,9 @@ def scrapeEmployeesPageRec(driver):
             else:
                 break
         return output_array
-    except Exception as e:
-        print "[!] Exception Accourred - [scrapeEmployeesPageRec]"
-        print e.message
-        m_driver.quit()
-        exit(1)
+    except Exception as err:
+        exitGracefully(driver,"[!] Exception Accourred - [scrapeEmployeesPageRec]", err.message)
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("username", help="the username for Linkedin account which will be used for scraping.", default="")
@@ -152,8 +158,6 @@ if __name__ == "__main__":
     ########### constents ###########
     baseUrl = "https://www.linkedin.com"
     searchUrl = "/search/results/companies/?keywords="
-    outputFilename = "LinkesinScraper_results_"
-    output_array=[]
     ########### constents ###########
     m_driver = initWebdriver()
     m_driver.get(baseUrl)
@@ -161,51 +165,21 @@ if __name__ == "__main__":
     login(m_driver,args.username,args.password)
     m_driver.save_screenshot('linkedin_loggedIn.png')
     sleep(1.5)
-    keyword = raw_input("[>] please enter company name : ")
-    flag = doSearch(m_driver,baseUrl,searchUrl,keyword)
-    results=[]
-    if(not flag):
-        results = getListing(m_driver)
-        printResults(results)
-    else:
-        print "[!] Company name was not found in Linkedin."
-        print "[!] see screenshot named 'linkedin_searchResults.png' for queries."
-    while(True):
-        try:
-            choice = raw_input("[>] please choose a company listed above : ")
-            int(choice)
-            if(int(choice)<1<len(results)):
-                raise Exception
-            break
-        except Exception as err:
-            print "[!] must be a number greater or equal to one! try again..."
-    choice=int(choice)-1
+    user_choice = getCompany(m_driver,baseUrl,searchUrl)
     nextLink = results[choice].find_element_by_css_selector("a").get_attribute("href")
     m_driver.save_screenshot('linkedin_before_next_hop.png')
     sleep(2)
     m_driver.get(nextLink)
     sleep(2)
     m_driver.save_screenshot('linkedin_after_next_hop.png')
-    try:
-        elem = m_driver.find_element_by_css_selector(".org-company-employees-snackbar__details-highlight.snackbar-description-see-all-link")
-    except NoSuchElementException as e:
-        print "[!] No Such Element - .org-company-employees-snackbar__details-highlight.snackbar-description-see-all-link"
-        m_driver.quit()
-        exit(1)
-    elem.click()
-    m_driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-    sleep(5)
-    m_driver.save_screenshot('linkedin_workers_listing.png')
-    amount_of_workers = str(m_driver.find_element_by_css_selector("h3.search-results__total").text).split("Showing ")[1].split(" ")[0].strip()
-    print "[#] Found " + amount_of_workers + " Workers."
+    clickAllEmployeesButton(m_driver)
+    preparePageForExtraction(m_driver)
+    res=scrapeEmployeesPage(m_driver)
 
-    res=scrapeEmployeesPageRec(m_driver)
     print "[#] Finished Scraping : " + str(len(res)) + " Workers."
     for r in res:
         print r
 
 
 
-
-    m_driver.quit()
-    exit(1)
+    exitGracefully(m_driver,"End Of Program")
