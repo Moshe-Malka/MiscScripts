@@ -4,7 +4,9 @@ from selenium.common.exceptions import *
 from time import sleep
 from sys import exit
 import json
+import csv
 import argparse
+from time import strftime
 
 def initWebdriver():
     try:
@@ -113,7 +115,7 @@ def getCompany(m_driver,baseUrl,searchUrl):
             break
         except Exception as err:
             print "[!] ValueError - must be a number greater or equal to one! try again..."
-    return results[int(choice)-1]
+    return results[int(choice)-1],keyword
 
 def preparePageForExtraction(m_driver):
     m_driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
@@ -165,17 +167,28 @@ if __name__ == "__main__":
     m_driver.get(baseUrl)
     print "[#] Logging in with: " + str(args.username) + " | " + str(args.password)
     login(m_driver,args.username,args.password)
-    user_choice = getCompany(m_driver,baseUrl,searchUrl)
+    user_choice,companyName = getCompany(m_driver,baseUrl,searchUrl)
     nextLink = user_choice.find_element_by_css_selector("a").get_attribute("href")
     m_driver.get(nextLink)
     clickAllEmployeesButton(m_driver)
     preparePageForExtraction(m_driver)
-    res=scrapeEmployeesPage(m_driver)
-
-    # TODO : let the user choose between printing the results or writing them to a file.
-    
+    data=scrapeEmployeesPage(m_driver)
     print "[#] Finished Scraping : " + str(len(res)) + " Workers."
-    for r in res:
-        print r
-
+    outputSelection = raw_input("[>] Output Data To ( JSON file = j , CSV file = c , Output to Screen = o ) : ")
+    t = strftime("%d/%m/%Y_%H:%M:%S")
+    if(outputSelection == 'j'):
+        with open("output_"+companyName+"_"+t+".json", 'w') as outfile:
+            json.dump(data, outfile)
+    else if(outputSelection == 'c'):
+        f = csv.writer(open("output_"+companyName+"_"+t+".csv", "wb+"))
+        f.writerow(["Full Name", "Position", "Location", "Link", "Profile Photo"]) #'':full_name,'':pos,'':loc,'':link,''
+        for c in data:
+            f.writerow([c["Full Name"],
+                        c["Position"],
+                        c["Location"],
+                        c["Link"],
+                        c["Profile Photo"]])
+    else:
+        for o in data:
+            print o
     exitGracefully(m_driver,"[#] End Of Program")
