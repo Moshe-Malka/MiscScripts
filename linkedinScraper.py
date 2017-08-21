@@ -183,11 +183,7 @@ if __name__ == "__main__":
         f = csv.writer(open("output_"+companyName+"_"+t+".csv", "wb+"))
         f.writerow(["Full Name", "Position", "Location", "Link", "Profile Photo"]) #'':full_name,'':pos,'':loc,'':link,''
         for c in data:
-            f.writerow([c["Full Name"],
-                        c["Position"],
-                        c["Location"],
-                        c["Link"],
-                        c["Profile Photo"]])
+            f.writerow([c["Full Name"], c["Position"], c["Location"], c["Link"], c["Profile Photo"]])
     else:
         for o in data:
             print o
