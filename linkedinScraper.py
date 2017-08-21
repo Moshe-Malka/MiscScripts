@@ -35,6 +35,7 @@ def check_exists_by_css_selector(w_driver,css):
 
 def login(w_driver,emailAddress,password):
     try:
+        if(len(emailAddress)==0 or len(password)==0): raise Exception
         passw = w_driver.find_element_by_id("login-password")
         email = w_driver.find_element_by_id("login-email")
         email.send_keys(emailAddress)
@@ -86,6 +87,7 @@ def printResults(results):
         # print "------------------------------------------------"
 def clickAllEmployeesButton(m_driver):
     try:
+        m_driver.save_screenshot('linkedin_before_next_hop.png')
         css = ".org-company-employees-snackbar__details-highlight.snackbar-description-see-all-link"
         all_employees_btn = m_driver.find_element_by_css_selector(css).click()
     except NoSuchElementException as e:
@@ -163,22 +165,17 @@ if __name__ == "__main__":
     m_driver.get(baseUrl)
     print "[#] Logging in with: " + str(args.username) + " | " + str(args.password)
     login(m_driver,args.username,args.password)
-    m_driver.save_screenshot('linkedin_loggedIn.png')
-    sleep(1.5)
     user_choice = getCompany(m_driver,baseUrl,searchUrl)
     nextLink = user_choice.find_element_by_css_selector("a").get_attribute("href")
-    m_driver.save_screenshot('linkedin_before_next_hop.png')
-    sleep(2)
     m_driver.get(nextLink)
-    m_driver.save_screenshot('linkedin_after_next_hop.png')
     clickAllEmployeesButton(m_driver)
     preparePageForExtraction(m_driver)
     res=scrapeEmployeesPage(m_driver)
 
+    # TODO : let the user choose between printing the results or writing them to a file.
+    
     print "[#] Finished Scraping : " + str(len(res)) + " Workers."
     for r in res:
         print r
 
-
-
-    exitGracefully(m_driver,"End Of Program")
+    exitGracefully(m_driver,"[#] End Of Program")
