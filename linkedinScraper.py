@@ -229,6 +229,12 @@ if __name__ == "__main__":
     #             print "[#] found email address : " + a["Full Name"].replace(" ","").lower()+"@gmail.com"
     #         except KeyError:
     #             pass
-
+    #
+    # >>> h = '{"foo":"bar", "foo2":"bar2"}'
+    # >>> json.loads(h)
+    # {u'foo': u'bar', u'foo2': u'bar2'}
+    # >>> json.loads(h).get('foo')
+    # u'bar'
+    
 
     exitGracefully(m_driver,"[#] End Of Program")
