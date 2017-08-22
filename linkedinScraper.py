@@ -7,6 +7,8 @@ import json
 import csv
 import argparse
 from time import strftime
+import requests
+
 
 def initWebdriver():
     try:
@@ -109,25 +111,31 @@ def getCompany(m_driver,baseUrl,searchUrl):
         exitGracefully(m_driver,"[!] Company name was not found in Linkedin.")
     while(True):
         try:
-            choice = raw_input("[>] please choose a company listed above : ")
-            if( int(choice)<1 or int(choice)>len(results) ):
-                raise Exception
-            break
-        except Exception as err:
+            choice = raw_input("[>] please choose a company listed above ( X to re-search ): ")
+            if(choice == 'X'): 
+                return None,keyword
+            else:
+            # if( int(choice)<1 or int(choice)>10 ):
+            #     raise Exception
+                break
+        except ValueError as err:
             print "[!] ValueError - must be a number greater or equal to one! try again..."
     return results[int(choice)-1],keyword
 
 def preparePageForExtraction(m_driver):
     m_driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-    sleep(5)
+    sleep(2)
     m_driver.save_screenshot('linkedin_workers_listing.png')
     amount_of_workers = m_driver.find_element_by_css_selector("h3.search-results__total").text.split("Showing ")[1].split(" ")[0].strip()
     print "[#] Found " + amount_of_workers + " Workers."
+    return amount_of_workers
 
-def scrapeEmployeesPage(driver):
-    global output_array
+def scrapeEmployeesPage(driver,workersCount):
+    print "[#] Starting to Scrape Company..."
     page_count=1
     try:
+        output_array=[]
+        workers_count=0
         while(True):
             workers_wrapper = driver.find_elements_by_css_selector(".search-result.search-result__occluded-item.ember-view")
             for worker in workers_wrapper:
@@ -140,12 +148,15 @@ def scrapeEmployeesPage(driver):
                 else:
                     photo = driver.find_element_by_css_selector("figure > img").get_attribute("src")
                 output_array.append(json.dumps({'Full Name':full_name,'Position':pos,'Location':loc,'Link':link,'Profile Photo':photo}))
+                workers_count+=1
+                print "[#] Scraped " + str(workers_count) + " / "+ str(workersCount) +" Workers."
             sleep(1.5)
             if(check_exists_by_css_selector(driver,"button.next")):
+                print "[#] Moving to Next Page...."
                 driver.find_element_by_css_selector("button.next").click()
                 sleep(10)
                 m_driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-                sleep(5)
+                sleep(2)
                 m_driver.save_screenshot("linkedin_workers_page_number_"+str(page_count)+".png")
                 page_count+=1
             else:
@@ -167,24 +178,57 @@ if __name__ == "__main__":
     m_driver.get(baseUrl)
     print "[#] Logging in with: " + str(args.username) + " | " + str(args.password)
     login(m_driver,args.username,args.password)
-    user_choice,companyName = getCompany(m_driver,baseUrl,searchUrl)
+    user_choice = None
+    while(user_choice == None):
+        user_choice,companyName = getCompany(m_driver,baseUrl,searchUrl)
     nextLink = user_choice.find_element_by_css_selector("a").get_attribute("href")
     m_driver.get(nextLink)
     clickAllEmployeesButton(m_driver)
-    preparePageForExtraction(m_driver)
-    data=scrapeEmployeesPage(m_driver)
-    print "[#] Finished Scraping : " + str(len(res)) + " Workers."
-    outputSelection = raw_input("[>] Output Data To ( JSON file = j , CSV file = c , Output to Screen = o ) : ")
+    workersCount = preparePageForExtraction(m_driver)
+    data=scrapeEmployeesPage(m_driver,workersCount)
+    print "[#] Finished Scraping : " + str(len(data)) + " Workers."
+    outputSelection = raw_input("[>] Output Data To ( JSON file = j , CSV file = c , Output to Screen = o  , Nothing = n ) : ")
     t = strftime("%d/%m/%Y_%H:%M:%S")
     if(outputSelection == 'j'):
         with open("output_"+companyName+"_"+t+".json", 'w') as outfile:
             json.dump(data, outfile)
-    else if(outputSelection == 'c'):
+    elif(outputSelection == 'o'):
+        for o in data:
+            print o
+    elif(outputSelection == 'c'):
         f = csv.writer(open("output_"+companyName+"_"+t+".csv", "wb+"))
         f.writerow(["Full Name", "Position", "Location", "Link", "Profile Photo"]) #'':full_name,'':pos,'':loc,'':link,''
         for c in data:
             f.writerow([c["Full Name"], c["Position"], c["Location"], c["Link"], c["Profile Photo"]])
     else:
-        for o in data:
-            print o
+        pass
+
+
+    #TODO:
+    # scrape profile page for each worker and find:
+    # 1) email addresses.
+
+    # html_source = m_driver.page_source
+    # emails = re.findall(r'[\w\.-]+@[\w\.-]+', html_source)
+
+    # 2) all github links (if any)
+
+    # need to open the 'Projects' Tab. click here - .accordion-panel.pv-profile-section.pv-accomplishments-block.projects .pv-accomplishments-block__expand
+    # then search the container : 
+    # .accordion-panel.pv-profile-section.pv-accomplishments-block.projects a.pv-accomplishment-entity__external-source
+    # if we have results, take the href attribute of it.
+
+    # 3) check if [full name] + [@gmail.com] is a valid address.
+
+    # flag = raw_input("[>] would you like to try and guess Gmail address? (Y/N)")
+    # if(flag.upper()=='Y'):
+    #     for a in data:
+    #         try:
+    #             r = requests.get("https://mail.google.com/mail/gxlu?email="+a["Full Name"].replace(" ","").lower()+"@gmail.com")
+    #             r.headers['Set-Cookie']
+    #             print "[#] found email address : " + a["Full Name"].replace(" ","").lower()+"@gmail.com"
+    #         except KeyError:
+    #             pass
+
+
     exitGracefully(m_driver,"[#] End Of Program")
