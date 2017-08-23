@@ -5,27 +5,27 @@ from time import sleep
 from sys import exit
 import argparse
 
-
-def initWebdriver():
+def init_webdriver():
     try:
         driver = webdriver.PhantomJS()
         driver.set_window_size(1920, 1080)
         print "[#] new WebDriver Initialized."
         return driver
-    except WebDriverException as err:
+    except WebDriverException:
         print "[!] Web Driver Exception. [initWebdriver]"
         exit(1)
 
-def exitGracefully(driver,custom_message,error_message = None):
+def exit_gracefully(driver, custom_message, error_message=None):
     try:
-        if(error_message!=None): print e_message
+        if error_message != None:
+            print error_message
         print custom_message
         driver.quit()
     except Exception:
         pass
     exit(1)
 
-def check_exists_by_css_selector(driver,css):
+def check_exists_by_css_selector(driver, css):
     try:
         driver.find_element_by_css_selector(css)
     except NoSuchElementException:
@@ -33,39 +33,71 @@ def check_exists_by_css_selector(driver,css):
         print "[#] Could Not Find Results."
     return True
 
-def parseArgs():
+def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("password", help="the password for InstaBotPy account which will be used for scraping.", default="")
     args = parser.parse_args()
     return args.password
 
-############## Constents ##############
-loginPage = "https://www.instagram.com/accounts/login/"
-username = "instabotpy@gmail.com"
+def login(driver, username, password):
+    try:
+        usernameInputObj = driver.find_element_by_css_selector('input[name="username"]')
+        usernameInputObj.send_keys(username)
+        passwordInputObj = driver.find_element_by_css_selector('input[name="password"]')
+        passwordInputObj.send_keys(password)
+        driver.save_screenshot("instabotpy_before_clicking_login_button.png")
+        buttonObj = driver.find_element_by_css_selector('button').click()
+        sleep(3)
+    except NoSuchElementException as err:
+        exit_gracefully(driver, "[!] Error while trying to log in. [login]", err.msg)
+    if check_exists_by_css_selector(driver, '#slfErrorAlert'):
+        return False
+    else:
+        sleep(5)
+        driver.save_screenshot("instabotpy_after_login.png")
+        return True
 
-password = parseArgs()
+# all search results after typing in main search bar :
+# [role="navigation"] a[href]:not([class*="coreSpriteDesktopNav"])
 
-m_driver = initWebdriver()
-m_driver.get(loginPage)
-m_driver.save_screenshot("instabotpy_page_upload.png")
-sleep(2)
-usernameInputObj = m_driver.find_element_by_css_selector('input[name="username"]')
-usernameInputObj.send_keys(username)
-passwordInputObj = m_driver.find_element_by_css_selector('input[name="password"]')
-passwordInputObj.send_keys(password)
-m_driver.save_screenshot("instabotpy_before_clicking_login_button.png")
-buttonObj = m_driver.find_element_by_css_selector('button').click()
-sleep(3)
-if(check_exists_by_css_selector(m_driver,'#slfErrorAlert')):
-    exitGracefully(m_driver,"[#] The username you entered doesn't belong to an account. Please check your username and try again.")
-else:
-    sleep(5)
-    m_driver.save_screenshot("instabotpy_after_login.png")
-    # continue in main scrren
+# wrapper selector for all suggestions (need to ignore first) :
+# #mainFeed ul li
+
+# when in a profile page :
+        # 1) get number of fallowers :
+        # header ul li:nth-child(2) a span ['title']
+        #
+        # 2) fallow this person : 
+        # header button:not(.coreSpriteOptionsEllipsis) (it will return an array of 2 objects - get the first)
+        #
+        # 3) check if the username is listed to a gmail account with the same suername.
+        # h1 (get text)
+        # run it against our gmail checker.
+        #
+        # 4) click to see all fallowers, than get all of them :
+        # header ul li:nth-child(2) a  (click)
+        # .......scroll to infinity......
+        # div[role="dialog"] ul li a[title] (link to each profile)
+        # div[role="dialog"] ul li button (link to follw each user)
+        #
+        # 5) press the "Load More" button and scroll all the person's photos until you reach the end,
+        # then get all links to photos in feed : 
+        # article > div > a (load more button)
+        # article div div div div a (array of links)
+
+def main(loginPage, username):
+    password = parse_args()
+    m_driver = init_webdriver()
+    m_driver.get(loginPage)
+    m_driver.save_screenshot("instabotpy_page_upload.png")
+
+    if not login(m_driver, username, password):
+        exit_gracefully(m_driver, "[#] Please check your username and password and try again.")
 
 
+    exit_gracefully(m_driver, "[#] End Of Program")
 
-
-
-
-exitGracefully(m_driver,"[#] End Of Program")
+if __name__ == '__main__':
+    loginPage = "https://www.instagram.com/accounts/login/"
+    m_username = "instabotpy@gmail.com"
+    main(loginPage, m_username)
