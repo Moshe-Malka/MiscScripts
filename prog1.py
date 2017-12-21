@@ -2,10 +2,10 @@
 import sys
 import re
 
-def getWB(filename):
+def getWorkBook(fname):
     try:
-        return openpyxl.load_workbook(filename)
-    except Exception:
+        return openpyxl.load_workbook(fname)
+    except IOError:
         print "Error reading file."
         print "File path : {0}".format(filename)
         sys.exit(1)
@@ -33,6 +33,17 @@ def getValuesByName(person, sheet):
 def matchArrays(a, b):
     return map(None, a, b)
 
+def pprintResults(sheetName, values):
+    print '[------------' + sheetName + '------------]\n'
+    for val in values:
+        if None not in val:
+            if type(val[1]) is float:
+                print val[0] + " : " + str(val[1]).replace(".","")
+            else:
+                print val[0] + " : " + val[1]
+        else:
+            print val[0] + " : -"
+
 if __name__ == '__main__':
     try:
         import openpyxl
@@ -44,28 +55,26 @@ if __name__ == '__main__':
     filename = "/Users/moshemalka/Desktop/data.xlsx"
 
     # getting our main openpyxl obj.
-    wb = getWB(filename)
+    wb = getWorkBook(filename)
 
     # name = input("> Please type the name to extract: ")
-    # person = str(name).encode('UTF-8')
+    # person = name.encode('UTF-8')
     person = r"ערן פייגין".decode('UTF-8')
-    matched_arr = []
 
     sheet_names = wb.get_sheet_names()
+    print "Results for : {}".format(person.encode('UTF-8'))
     for sheet in sheet_names:
-        c_data = []
         current_sheet = wb.get_sheet_by_name(sheet)
-        header = getSheetHeader(current_sheet)
+        headers = getSheetHeader(current_sheet)
         row_values = getValuesByName(person, current_sheet)
-        ##TODO: make a function that takes 2 args - sheet name and values (sheet, matched_arr), and prints them out.
-        print "*************" + sheet + "*************"
-        matched_arr.append(matchArrays(header, row_values))
-        # break
-    # print out_arr
-    for x in matched_arr:
-        for y in x:
-            for z in x:
-                print z[0]
-                print z[1]
-        print "["+"-"*50+"]"
-        
+        # matched_arr.append(matchArrays(headers, row_values))
+        pprintResults(sheet, matchArrays(headers, row_values))
+        print "\n"
+
+
+
+# need to fix 2 errors in the xslx file:
+#   in the fax2mail sheet - the name column should be B. as in all other sheets.
+#   in the phones column - for some reason it skeeps the empty value and mixes up the headers 
+#   with the values.
+#
