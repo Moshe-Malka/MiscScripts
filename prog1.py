@@ -17,11 +17,17 @@ except Exception as e:
 sheet_names = wb.get_sheet_names()
 for sheet in sheet_names:
     current_sheet = wb.get_sheet_by_name(sheet)
+    ##### get first row #####
+    #TODO
+    ##### get certain person's values according to the person's name #####
     for row in current_sheet.rows:
         if(row[1].value is not None):
             if(row[1].value == person):
                 # getting the full row denoting the person's name
-                print list(row)[:1]+list(row)[2:]
+                # print list(row)[:1]+list(row)[2:]
+                person_row = list(row)[:1]+list(row)[2:]
+                for cell in person_row:
+                    print cell.value
                 # number_of_cols = len(list(row)[1:])
                 # for i in range(number_of_cols):
                 #     curr = list(row)[1:][i].value
