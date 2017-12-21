@@ -67,5 +67,5 @@ if __name__ == '__main__':
             for z in x:
                 print z[0]
                 print z[1]
-                print "["+"-"*50+"]"
+        print "["+"-"*50+"]"
         
