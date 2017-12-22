@@ -10,7 +10,7 @@ def getWorkBook(fname):
         print "File path : {0}".format(filename)
         sys.exit(1)
 
-def getSheetHeader(sh):
+def getSheetHeaders(sh):
     head = []
     for i in range(1,len(list(sh.columns))+1):
         val = sh.cell(row=1, column=i).value
@@ -38,9 +38,11 @@ def pprintResults(sheetName, values):
     for val in values:
         if None not in val:
             if type(val[1]) is float:
-                print val[0] + " : " + str(val[1]).replace(".","")
+                print val[0] + " : " 
+                print str(val[1]).replace(".","")
             else:
-                print val[0] + " : " + val[1]
+                print val[0] + " : "
+                print val[1]
         else:
             print val[0] + " : -"
 
@@ -65,9 +67,8 @@ if __name__ == '__main__':
     print "Results for : {}".format(person.encode('UTF-8'))
     for sheet in sheet_names:
         current_sheet = wb.get_sheet_by_name(sheet)
-        headers = getSheetHeader(current_sheet)
+        headers = getSheetHeaders(current_sheet)
         row_values = getValuesByName(person, current_sheet)
-        # matched_arr.append(matchArrays(headers, row_values))
         pprintResults(sheet, matchArrays(headers, row_values))
         print "\n"
 
@@ -75,6 +76,9 @@ if __name__ == '__main__':
 
 # need to fix 2 errors in the xslx file:
 #   in the fax2mail sheet - the name column should be B. as in all other sheets.
-#   in the phones column - for some reason it skeeps the empty value and mixes up the headers 
-#   with the values.
+#   i fixed it by moved the name column to the B section.
+#   i also fixed it in some more sheets.
+#
+#   in the phones column - for some reason it skips the empty value and mixes up the headers 
+#   with the values. i fixed it by simply adding the same value to the remaning cells.
 #
