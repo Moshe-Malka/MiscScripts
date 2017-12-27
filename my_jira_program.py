@@ -5,9 +5,10 @@ from sys import exit
 
 def getJiraObject(creds):
       try:
-            creds = tuple(creds)
-            return JIRA(server='https://quadanalytix.atlassian.net',
-                        basic_auth=creds)
+            userpass = tuple(list(creds.values())[:2])
+            server_address = list(creds.values())[-1]
+            return JIRA(server=server_address,
+                        basic_auth=userpass)
       except:
             print "[!] Could not connect to Jira server"
             return None
@@ -51,8 +52,8 @@ def printTimeDiff(data):
 
 if __name__ == '__main__':
       ### TODO ###
-      # ask the user for a certain name and output only his tickets.
-      # ask (?) for the range of ticket id's.
+      # (Optional) ask the user for a certain name and output only his tickets.
+      # (Optional) ask for the range of ticket id's.
       try:
             from jira import JIRA
       except:
@@ -64,9 +65,9 @@ if __name__ == '__main__':
       with open('mycreds.txt', 'r') as _creds:
             my_creds = eval(_creds.readline())
       assert my_creds
-      jira = getJiraObject([my_creds['username'], my_creds['password']])
+      jira = getJiraObject(my_creds)
       assert jira
-      for ticket_name in [TICKET_PREFIX+str(y) for y in [x for x in range(300,310)]]:
+      for ticket_name in [TICKET_PREFIX+str(y) for y in [x for x in range(0,500)]]:
             try:
                   issue = jira.issue(ticket_name)
                   assert issue
@@ -77,6 +78,7 @@ if __name__ == '__main__':
                   print "[!] Ticket Named {0} Not Found!".format(ticket_name)
                   pass
 
+# When a report would be needed:
 # >>> arr = [["Moshe","ticket1","20 H"],["Limor","ticket202","3 H"],["Stas","ticket5","1.5 H"]]
 # >>> arr
 # [['Moshe', 'ticket1', '20 H'], ['Limor', 'ticket202', '3 H'], ['Stas', 'ticket5', '1.5 H']]
