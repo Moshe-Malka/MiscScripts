@@ -42,12 +42,25 @@ def printTimeDiff(data):
                   if (_from == "New" and _to == "In Progress") or (_from == "In Progress" and _to == "Code Review"):
                         ts_arr.append(datetime.strptime(_created[:-5], FMT))
       splitted_diff = str(ts_arr[1] - ts_arr[0]).split(".")[0].split(":")
-      print "Writing DSL named {0} Took {1} : {2} Hours {3} Minutes and {4} Seconds".format(
-            issue.key, 
+      print "Writing DSL ID: {0} , Name: {1} \nTook {2}: {3} Hours {4} Minutes and {5} Seconds".format(
+            issue.key,
+            issue.fields.summary,  
             issue.fields.assignee,
             splitted_diff[0],
             splitted_diff[1],
             splitted_diff[2])
+
+def printAllTransitions(data):
+      assert data
+      values = json.loads(data)['values']
+      for val in values:
+            if(val['items'][0]['field'] == 'status'):
+                  print "Author: {0}".format(val['author']['displayName'])
+                  print "From: '{0}' ".format(val['items'][0]['fromString'])
+                  print "To: '{0}' ".format(val['items'][0]['toString'])
+                  created = ' '.join(val['created'].split("T")).split(".")[0]
+                  print "At: {0}".format(created)
+                  print '-'*30
 
 
 if __name__ == '__main__':
@@ -67,15 +80,18 @@ if __name__ == '__main__':
       assert my_creds
       jira = getJiraObject(my_creds)
       assert jira
-      for ticket_name in [TICKET_PREFIX+str(y) for y in [x for x in range(0,500)]]:
+      for ticket_name in [TICKET_PREFIX+str(y) for y in [x for x in range(1,500)]]:
             try:
                   issue = jira.issue(ticket_name)
                   assert issue
                   data = curlGetRequest(my_creds['serverAddress'], issue.id)
-                  printTimeDiff(data)
-                  print '-'*100
+                  print '-'*65
+                  print "| {0}  {1}   {0} |".format('*'*25, ticket_name)
+                  print '-'*65
+                  # printTimeDiff(data)
+                  printAllTransitions(data)
             except:
-                  print "[!] Ticket Named {0} Not Found!".format(ticket_name)
+                  # print "[!] Ticket ID {0} Not Found!".format(ticket_name)
                   pass
 
 # When a report would be needed:
