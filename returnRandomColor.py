@@ -1,7 +1,7 @@
 import random
 
-def returnRandomColor:
+def returnRandomColor():
     return ''.join([x for i in range(6) for x in random.choice([a for a in '1234567890abcdef'])])
 
-def returnRandomColorHex:
+def returnRandomColorHex():
     return '#'+''.join([x for i in range(6) for x in random.choice([a for a in '1234567890abcdef'])])
