@@ -1,5 +1,5 @@
 
-function main(func, dot){
+function isInflectionPoint(func, dot){
     let flag
     // i.e. "f(x) = x⁷ + x⁶ - x⁵ + x⁴ - x³ - x²"
     let my_func = ggbApplet.evalCommandGetLabels(func)
