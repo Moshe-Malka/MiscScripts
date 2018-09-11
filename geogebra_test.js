@@ -20,7 +20,7 @@ function main(func, dot){
     if(!flag) return false
 
     // p
-    let dev_func = ggbApplet.evalCommandCAS(`Derivative(${my_func}, 2)`)
+    let dev_func = ggbApplet.evalCommandGetLabels(`Derivative(${my_func}, 2)`)
     console.log(`Derivative: ${dev_func}`);
     
     let derivative = ggbApplet.evalCommandGetLabels(dev_func)
