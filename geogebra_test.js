@@ -56,7 +56,7 @@ function isInflectionPoint(func, dot){
     ggbApplet.evalCommand(`c1 = o(x(${point}))`)
     ggbApplet.evalCommand(`c2 = u(x(${point}))`)
 
-    ggbApplet.getValue('c1').toFixed(3) === ggbApplet.getValue('c2').toFixed(3)
+    Math.sign(ggbApplet.getValue('c1').toFixed(3)) === Math.sign(ggbApplet.getValue('c2').toFixed(3))
     ?
     flag = true
     :
